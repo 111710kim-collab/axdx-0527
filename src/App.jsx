@@ -1,121 +1,102 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useMemo, useState } from 'react'
+import TravelForm from './components/TravelForm'
+import RecommendationList from './components/RecommendationList'
+import { createRecommendations } from './lib/recommendation'
+import { calculateRecommendationMatchRate } from './lib/kpi'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [recommendations, setRecommendations] = useState([])
+  const [addedCourseIds, setAddedCourseIds] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+
+  const matchRate = useMemo(() => {
+    return calculateRecommendationMatchRate(
+      addedCourseIds.length,
+      recommendations.length,
+    )
+  }, [addedCourseIds.length, recommendations.length])
+
+  const matchRatePercent = Math.round(matchRate * 100)
+
+  const handleGenerate = (input) => {
+    setIsLoading(true)
+    setErrorMessage('')
+
+    try {
+      const result = createRecommendations(input)
+      setRecommendations(result)
+      setAddedCourseIds([])
+    } catch {
+      setErrorMessage('추천 코스를 불러오지 못했습니다. 다시 시도해주세요')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleAddCourse = (courseId) => {
+    setAddedCourseIds((prev) => {
+      if (prev.includes(courseId)) {
+        return prev
+      }
+
+      return [...prev, courseId]
+    })
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <main className="app">
+      <section className="hero">
+        <p className="eyebrow">AX Travel Curation</p>
+        <h1>AX 기반 초개인화 여행 큐레이션 플랫폼</h1>
+        <p>
+          목적지, 일정, 동반자, 여행 컨셉을 입력하면 5초 이내에 3가지
+          테마별 맞춤 여행 일정표와 지도 동선을 확인할 수 있습니다.
+        </p>
+      </section>
+
+      <section className="dashboard">
+        <div className="metric-card">
+          <span>추천 코스</span>
+          <strong>{recommendations.length}개</strong>
         </div>
-        <div>
-          <h1>Get started</h1>
+
+        <div className="metric-card">
+          <span>내 일정 추가</span>
+          <strong>{addedCourseIds.length}개</strong>
+        </div>
+
+        <div className="metric-card">
+          <span>추천 저장률</span>
+          <strong>{matchRatePercent}%</strong>
+        </div>
+      </section>
+
+      <section className="planner-card">
+        <div className="section-heading">
+          <p className="eyebrow dark">Travel Input</p>
+          <h2>여행 조건 입력</h2>
           <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
+            필수 항목을 입력하면 Mock AI가 3가지 테마별 추천 코스를 생성합니다.
           </p>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+
+        <TravelForm onGenerate={handleGenerate} isLoading={isLoading} />
+
+        {errorMessage && (
+          <p className="form-errors" role="alert">
+            {errorMessage}
+          </p>
+        )}
       </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <RecommendationList
+        recommendations={recommendations}
+        addedCourseIds={addedCourseIds}
+        onAddCourse={handleAddCourse}
+      />
+    </main>
   )
 }
 
